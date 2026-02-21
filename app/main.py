@@ -8,6 +8,7 @@ from .database import engine
 from .models import Base, ImageRecord
 from sqlalchemy.orm import Session
 from .database import SessionLocal
+from .schemas import ImageResponse, ImageListResponse
 
 
 app = FastAPI()
@@ -24,7 +25,39 @@ def root():
     return {"message": "Image Processing API is running"}
 
 
-@app.post("/api/images")
+@app.post(
+    "/api/images",
+    response_model=ImageResponse,
+    summary="Upload an image",
+    responses={
+        200: {
+            "description": "Image successfully processed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "data": {
+                            "image_id": "123e4567-e89b-12d3-a456-426614174000",
+                            "original_name": "example.jpg",
+                            "processed_at": "2026-02-21T18:58:33.308271",
+                            "metadata": {
+                                "width": 1920,
+                                "height": 1080,
+                                "format": "jpg",
+                                "size_bytes": 204800
+                            },
+                            "thumbnails": {
+                                "small": "http://127.0.0.1:8000/api/images/123/thumbnails/small",
+                                "medium": "http://127.0.0.1:8000/api/images/123/thumbnails/medium"
+                            }
+                        },
+                        "error": None
+                    }
+                }
+            }
+        }
+    }
+)
 async def upload_image(file: UploadFile = File(...)):
 
     # Validate file type
@@ -115,7 +148,11 @@ def get_thumbnail(image_id: str, size: str):
     return FileResponse(file_path)
 
 
-@app.get("/api/images")
+@app.get(
+    "/api/images",
+    response_model=ImageListResponse,
+    summary="List all processed images"
+)
 def list_images():
 
     db = SessionLocal()
